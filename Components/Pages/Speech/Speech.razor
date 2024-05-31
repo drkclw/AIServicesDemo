@@ -1,0 +1,27 @@
+﻿@inject SpeechService speechService
+
+@page "/speech"
+@using AzureAIServicesDemo.Services
+
+<PageTitle>Speech</PageTitle>
+
+<select id="language" class="form-select" @bind="language">
+    <option value="en-US">English</option>
+    <option value="es-MX">Spanish</option>
+</select>
+
+<br />
+
+<textarea id="textToRead" class="form-control" placeholder="Enter text to speak" @bind="textToRead"></textarea>
+
+<br />
+<button class="btn btn-primary" @onclick="ReadText">Read text</button>
+@code {
+    string? textToRead;
+    string? language = "en-US";
+
+    private async Task ReadText()
+    {
+        await speechService.TextToSpeech(textToRead, language);
+    }
+}

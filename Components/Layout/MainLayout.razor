@@ -1,0 +1,56 @@
+﻿@using AzureAIServicesDemo.Services
+@inject SpeechService speechService
+@inject LanguageService languageService
+@inject NavigationManager NavManager
+
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <div class="input-group w-50">
+                <span class="bi bi-mic input-group-text" @onclick="startVoiceInput"></span>
+                <input type="text" class="form-control" placeholder="Enter command" aria-label="Input group example" aria-describedby="basic-addon1" @bind="input">
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private string? input;
+
+    private async Task startVoiceInput()
+    {
+        input = "Listening...";
+
+        input = await speechService.RecognizeFromMic();
+        var intent = await languageService.GetIntent(input);
+
+        switch (intent)
+        {
+            case "Analyze":
+                NavManager.NavigateTo("analyze");
+                break;
+            case "Import":
+                NavManager.NavigateTo("import");
+                break;
+            default:
+                break;
+
+        }
+    }
+}

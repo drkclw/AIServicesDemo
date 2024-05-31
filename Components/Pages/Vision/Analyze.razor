@@ -1,0 +1,123 @@
+﻿@using AzureAIServicesDemo.Models.Vision
+@using AzureAIServicesDemo.Services
+@using System.Text.Json
+@using BlazorBootstrap
+@inject ImageService imageService
+@inject IJSRuntime JSRuntime
+
+@page "/analyze"
+
+<PageTitle>Image analyzer</PageTitle>
+
+<img id="imagePreview" />
+
+<br />
+
+<InputFile OnChange="@LoadFile" />
+
+<br />
+
+<canvas id="myCanvas">
+    Your browser does not support the HTML5 canvas tag.
+</canvas>
+
+<br />
+
+@if (results != null)
+{
+    <input type="text" @bind="@results.Caption"/>
+
+    <Accordion>
+        <AccordionItem Title="Tags">
+            <Content>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tag</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tag in results.Tags)
+                        {
+                            <tr>
+                                <td>@tag.Name</td>
+                                <td>@tag.Score</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </Content>
+        </AccordionItem>
+
+        <AccordionItem Title="Objects">
+            <Content>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tags</th>
+                            <th>Coordinates</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var obj in results.Objects)
+                        {
+                            <tr>
+                                <td>@string.Join(",", obj.Tags.Select(tag => tag.Name))</td>
+                                <td>@obj.X, @obj.Y</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </Content>
+        </AccordionItem>
+
+        <AccordionItem Title="Dense captions">
+            <Content>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cap in results.DenseCaptions)
+                        {
+                            <tr>
+                                <td>@cap.Text</td>
+                                <td>@cap.Score</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </Content>
+        </AccordionItem>
+    </Accordion>
+}
+
+@code {
+    private ImageAnalysis? results;
+
+    /*protected override void OnInitialized() =>
+        Model ??= new();*/
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        var resizedImage =
+            await imageFile.RequestImageFileAsync("image/jpg", 500, 500);
+        var jsImageStream = resizedImage.OpenReadStream();
+        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
+        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
+            "imagePreview", dotnetImageStream);
+        var streamRef = new DotNetStreamReference(imageFile.OpenReadStream(imageFile.Size));
+        var json = await JSRuntime.InvokeAsync<string>("getImageDimensions", streamRef);
+
+        var dimensions = JsonSerializer.Deserialize<ImageDimensions>(json);
+        
+        results = await imageService.AnalyzeImage(e.File.OpenReadStream());
+        await JSRuntime.InvokeVoidAsync("drawRectangle", "imagePreview", results.Objects.ToArray(), dimensions.Height, dimensions.Width);        
+    }
+}

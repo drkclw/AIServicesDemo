@@ -1,0 +1,118 @@
+﻿@using Azure.AI.ContentSafety;
+@using AzureAIServicesDemo.Services
+@using BlazorBootstrap;
+@inject IJSRuntime JSRuntime;
+@inject ContentSafetyService contentSafetyService;
+
+@page "/contentsafety"
+
+<Accordion>
+    <AccordionItem Title="Evaluate image">
+        <Content>
+            <img id="imagePreview" />
+
+            <InputFile OnChange="@LoadFile" />
+
+
+            @if (imageResult != null)
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Severity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var analysis in imageResult.CategoriesAnalysis)
+                        {
+                            <tr>
+                                <td>@analysis.Category</td>
+                                <td>@analysis.Severity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </Content>
+    </AccordionItem>
+
+    <AccordionItem Title="Evaluate text">
+        <Content>
+            <InputRadioGroup @bind-Value="outputType">
+                <label for="fourLevels">Four levels</label>
+                <InputRadio Value="1" id="fourLevels" />
+                <label for="eightLevels">Eight levels</label>
+                <InputRadio Value="2" id="eightLevels" />
+            </InputRadioGroup>
+
+<textarea id="inputText" name="inputText" class="form-control" @bind="InputText" />
+
+            <button class="btn btn-primary" @onclick="AnalyzeTextContent">Analyze</button>
+
+            @if (textResult != null)
+            {
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Severity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var analysis in textResult.CategoriesAnalysis)
+                        {
+                            <tr>
+                                <td>@analysis.Category</td>
+                                <td>@analysis.Severity</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Blocked term</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var blockedTerm in textResult.BlocklistsMatch)
+                        {
+                            <tr>
+                                <td>@blockedTerm.BlocklistItemText</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </Content>
+    </AccordionItem>
+</Accordion>
+
+@code {
+    private AnalyzeImageResult? imageResult;
+    private AnalyzeTextResult? textResult;
+    private int outputType;
+
+    private string InputText = "Enter text";
+
+    private async Task AnalyzeTextContent()
+    {
+        textResult = await contentSafetyService.AnalyzeText(InputText, outputType);
+    }
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+
+        var imageFile = e.File;
+        var resizedImage =
+            await imageFile.RequestImageFileAsync("image/jpg", 500, 500);
+        var jsImageStream = resizedImage.OpenReadStream();
+        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
+        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
+            "imagePreview", dotnetImageStream);
+
+        imageResult = await contentSafetyService.AnalyzeImage(e.File.OpenReadStream());
+    }
+}

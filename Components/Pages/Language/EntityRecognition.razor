@@ -1,0 +1,51 @@
+﻿@using AzureAIServicesDemo.Models.Language
+@using AzureAIServicesDemo.Services;
+@using BlazorBootstrap;
+@inject LanguageService languageService;
+
+@page "/entityRecognition"
+
+<textarea id="inputText" placeholder="Enter text" @bind="inputText" class="form-control"></textarea>
+
+<button class="btn btn-primary" @onclick="RecognizeEntities">Analyze</button>
+
+@if (entities != null)
+{
+    <Accordion>
+        <AccordionItem Title="Entities">
+            <Content>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Offset</th>
+                            <th>Length</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entity in entities)
+                        {
+                            <tr>
+                                <td>@entity.Category</td>
+                                <td>@entity.SubCategory</td>
+                                <td>@entity.Offset</td>
+                                <td>@entity.Length</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </Content>
+        </AccordionItem>
+    </Accordion>
+}
+
+@code {
+    private IEnumerable<Entity>? entities;
+    private string? inputText;
+
+    private async Task RecognizeEntities()
+    {
+        entities = await languageService.RecognizeEntities(inputText);
+    }
+}

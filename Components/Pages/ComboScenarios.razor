@@ -1,0 +1,36 @@
+﻿@using BlazorBootstrap;
+@using AzureAIServicesDemo.Services;
+@inject SpeechService speechService;
+@inject TranslatorService translatorService;
+
+@page "/combo"
+
+<Accordion>
+    <AccordionItem Title="Translate speech">
+        <Content>
+            <label for="targetLanguage">Target language</label>
+            <select id="targetLanguage" class="form-select" @bind="language">
+                <option value="en-US">English</option>
+                <option value="es-MX">Spanish</option>
+            </select>
+
+            <button class="btn btn-primary" @onclick="translateVoice">Capture voice</button>
+            <br/>
+            <label></label>
+            <textarea id="translatedText" @bind="translatedText" class="form-control"></textarea>
+        </Content>
+    </AccordionItem>
+</Accordion>
+
+@code {
+    private string? translatedText;
+    private string? capturedText;
+    private string? language;
+
+    private async Task translateVoice()
+    {
+        capturedText = await speechService.RecognizeFromMic();
+        var result = await translatorService.Translate(capturedText, language ?? "en-US");
+        translatedText = string.Join("\n", result?.Translations?.SelectMany(t => t));
+    }
+}

@@ -1,0 +1,48 @@
+﻿@using AzureAIServicesDemo.Services
+@using AzureAIServicesDemo.Models.DocumentIntelligence
+@inject IJSRuntime JSRuntime
+@inject DocumentIntelligenceService documentIntelligenceService
+
+@page "/documentintelligence"
+@using System.Text.Json
+
+<PageTitle>Image analyzer</PageTitle>
+
+<img id="imagePreview" />
+
+<br />
+
+<InputFile OnChange="@LoadFile" />
+
+<br />
+
+@if(patientForm != null)
+{
+    <br />
+    <label for="givenNames">Given Names: </label>
+    <input id="givenNames" type="text" @bind="@patientForm.GivenNames"/>
+}
+
+@code {
+    private PatientForm? patientForm;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        var resizedImage =
+            await imageFile.RequestImageFileAsync("image/jpg", 400, 700);
+        var jsImageStream = resizedImage.OpenReadStream();
+        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
+        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
+            "imagePreview", dotnetImageStream);
+
+        try
+        {
+            patientForm = await documentIntelligenceService.ExtractPatientForm(e.File.OpenReadStream());
+        }catch(Exception ex)
+        {
+            var test = ex.Message;
+        }
+
+    }
+}

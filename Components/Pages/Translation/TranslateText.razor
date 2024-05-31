@@ -1,0 +1,40 @@
+﻿@using AzureAIServicesDemo.Models.Translation;
+@using AzureAIServicesDemo.Services;
+@inject TranslatorService translatorService;
+
+@page "/translateText"
+
+<label for="targetLanguage">Target language</label>
+<select id="targetLanguage" class="form-select" @bind="language">
+    <option value="en-US">English</option>
+    <option value="es-MX">Spanish</option>
+    <option value="nl">Dutch</option>
+</select>
+
+
+
+<textarea id="inputText" name="inputText" class="form-control" @bind="InputText" />
+<br />
+
+<button class="btn btn-primary" @onclick="Translate">Translate</button>
+<br />
+<br />
+<p>Detected language: @DetectedLanguage</p>
+<br />
+<textarea id="translatedText" name="translatedText" class="form-control" @bind="TranslatedText" />
+
+@code {
+    private TranslatorResult? result;
+    private string? language;
+
+    private string InputText = "Enter text";
+    private string? TranslatedText;
+    private string? DetectedLanguage;
+
+    private async Task Translate()
+    {
+        result = await translatorService.Translate(InputText, language ?? "en-US");
+        TranslatedText = string.Join("\n", result?.Translations?.SelectMany(t => t));
+        DetectedLanguage = result.DetectedLanguage;
+    }
+}
