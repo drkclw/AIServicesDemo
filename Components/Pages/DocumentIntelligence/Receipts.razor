@@ -1,0 +1,57 @@
+﻿@using AzureAIServicesDemo.Services
+@using AzureAIServicesDemo.Models.DocumentIntelligence
+@inject IJSRuntime JSRuntime
+@inject DocumentIntelligenceService documentIntelligenceService
+
+@page "/receipt"
+@using System.Text.Json
+
+<PageTitle>Receipt data extraction</PageTitle>
+
+<img id="imagePreview" />
+
+<br />
+
+<InputFile OnChange="@LoadFile" />
+
+<br />
+
+@if (receipt != null)
+{
+    <br />
+    <label for="merchantName">Merchant Name: </label>
+    <input id="merchantName" type="text" @bind="@receipt.MerchantName" />
+
+    <br />
+    <label for="subTotal">Subtotal: </label>
+    <input id="subTotal" type="text" @bind="@receipt.Subtotal" />
+
+    <br />
+    <label for="total">Total: </label>
+    <input id="total" type="text" @bind="@receipt.Total" />
+}
+
+@code {
+    private Receipt? receipt;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        var resizedImage =
+            await imageFile.RequestImageFileAsync("image/jpg", 400, 700);
+        var jsImageStream = resizedImage.OpenReadStream();
+        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
+        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
+            "imagePreview", dotnetImageStream);
+
+        try
+        {
+            receipt = await documentIntelligenceService.ExtractReceipt(e.File.OpenReadStream());
+        }
+        catch (Exception ex)
+        {
+            var test = ex.Message;
+        }
+
+    }
+}

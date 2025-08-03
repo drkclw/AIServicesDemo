@@ -1,48 +1,17 @@
-﻿@using AzureAIServicesDemo.Services
-@using AzureAIServicesDemo.Models.DocumentIntelligence
-@inject IJSRuntime JSRuntime
-@inject DocumentIntelligenceService documentIntelligenceService
+﻿@page "/documentintelligence"
 
-@page "/documentintelligence"
-@using System.Text.Json
+<PageTitle>Document Intelligence APIs</PageTitle>
 
-<PageTitle>Image analyzer</PageTitle>
+<h1>Welcome to the demo for the Document Intelligence APIs!</h1>
 
-<img id="imagePreview" />
+<p>Click on the following links to test the functionality available in the API:</p>
 
-<br />
-
-<InputFile OnChange="@LoadFile" />
-
-<br />
-
-@if(patientForm != null)
-{
-    <br />
-    <label for="givenNames">Given Names: </label>
-    <input id="givenNames" type="text" @bind="@patientForm.GivenNames"/>
-}
+<ul>
+    <li><a href="/receipt">Receipt API</a></li>
+    <li><a href="/invoice">Invoice API</a></li>
+    <li><a href="/patientform">Patient form (custom model)</a></li>
+</ul>
 
 @code {
-    private PatientForm? patientForm;
 
-    private async Task LoadFile(InputFileChangeEventArgs e)
-    {
-        var imageFile = e.File;
-        var resizedImage =
-            await imageFile.RequestImageFileAsync("image/jpg", 400, 700);
-        var jsImageStream = resizedImage.OpenReadStream();
-        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
-        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
-            "imagePreview", dotnetImageStream);
-
-        try
-        {
-            patientForm = await documentIntelligenceService.ExtractPatientForm(e.File.OpenReadStream());
-        }catch(Exception ex)
-        {
-            var test = ex.Message;
-        }
-
-    }
 }

@@ -1,0 +1,93 @@
+﻿@using AzureAIServicesDemo.Services
+@using AzureAIServicesDemo.Models.DocumentIntelligence
+@inject IJSRuntime JSRuntime
+@inject DocumentIntelligenceService documentIntelligenceService
+@using BlazorBootstrap
+
+@page "/invoice"
+@using System.Text.Json
+
+<PageTitle>Invoice data extraction</PageTitle>
+
+<img id="imagePreview" />
+
+<br />
+
+<InputFile OnChange="@LoadFile" />
+
+<br />
+
+@if (invoice != null)
+{
+    @* <br />
+    <label for="merchantName">Merchant Name: </label>
+    <input id="merchantName" type="text" @bind="@receipt.MerchantName" />
+
+    <br />
+    <label for="subTotal">Subtotal: </label>
+    <input id="subTotal" type="text" @bind="@receipt.Subtotal" />
+
+    <br />
+    <label for="total">Total: </label>
+    <input id="total" type="text" @bind="@receipt.Total" /> *@
+    <Accordion>
+    <AccordionItem Title="Items">
+            <Content>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Stock Number</th>
+                            <th>Description</th>
+                            <th>Product Category</th>
+                            <th>Ordered</th>
+                            <th>Shipped</th>
+                            <th>Unit Price</th>
+                            <th>Unit</th>
+                            <th>Extension</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in invoice.InvoiceItems)
+                        {
+                            <tr>
+                                <td>@item.ProductCode</td>
+                                <td>@item.Description</td>
+                                <td>@item.ProductCategory</td>
+                                <td>@item.OrderQty</td>
+                                <td>@item.ShippedQty</td>
+                                <td>@item.UnitPrice</td>
+                                <td>@item.Unit</td>
+                                <td>@item.Amount</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </Content>
+        </AccordionItem>
+        </Accordion>
+}
+
+@code {
+    private Invoice? invoice;
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        var imageFile = e.File;
+        /*var resizedImage =
+            await imageFile.RequestImageFileAsync("image/jpg", 400, 700);
+        var jsImageStream = resizedImage.OpenReadStream();
+        var dotnetImageStream = new DotNetStreamReference(jsImageStream);
+        await JSRuntime.InvokeVoidAsync("setImageUsingStreaming",
+            "imagePreview", dotnetImageStream);*/
+
+        try
+        {
+            invoice = await documentIntelligenceService.ExtractInvoice(e.File.OpenReadStream());
+        }
+        catch (Exception ex)
+        {
+            var test = ex.Message;
+        }
+
+    }
+}

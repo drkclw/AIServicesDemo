@@ -3,6 +3,7 @@ using Azure.AI.Language.Conversations;
 using Azure.AI.TextAnalytics;
 using Azure.Core;
 using AzureAIServicesDemo.Models.Language;
+using AzureAIServicesDemo.Models.Speech;
 using System.Text.Json;
 
 namespace AzureAIServicesDemo.Services
@@ -67,6 +68,61 @@ namespace AzureAIServicesDemo.Services
                 Offset = entityResult.Offset,
                 Length = entityResult.Length
             }).OrderBy(entity => entity.Offset);
+        }
+
+        public async Task<SentimentAnalysisResult[]> AnalyzeSentiment(TranscriptionPhrase[] phrases)
+        {
+            // Create a map of phrase ID to phrase data so we can retrieve it later.
+            var phraseData = new Dictionary<int, (int speakerNumber, double offsetInTicks)>();
+
+            // Convert each transcription phrase to a "document" as expected by the sentiment analysis SDK.
+            var documentsToSend = phrases.Select(phrase =>
+            {
+                phraseData.Add(phrase.id, (phrase.speakerNumber, phrase.offsetInTicks));
+                return new TextDocumentInput(phrase.id.ToString(), phrase.text);
+            }
+            );
+
+            // We can only analyze sentiment for 10 documents per request.
+            // We cannot use SelectMany here because the lambda returns a Task.
+            /*var tasks = documentsToSend.Chunk(10).Select(async chunk =>
+            {
+                var response = await _textAnalyticsClient.AnalyzeSentimentBatchAsync(chunk);
+                return response.Value;
+            }
+            ).ToArray();
+            Task.WhenAll(tasks);
+            return tasks.SelectMany(task =>
+            {
+                var result = task.Result;
+                return result.Select(documentResult =>
+                {
+                    (int speakerNumber, double offsetInTicks) = phraseData[Int32.Parse(documentResult.Id)];
+                    return new SentimentAnalysisResult(speakerNumber, offsetInTicks, documentResult);
+                });
+            }
+            ).ToArray();*/
+            var chunks = documentsToSend.Chunk(10);
+            var sentimentResponses = new List<Response<AnalyzeSentimentResultCollection>>();
+            foreach (var chunk in chunks)
+            {
+                sentimentResponses.Add(await _textAnalyticsClient.AnalyzeSentimentBatchAsync(chunk));
+            }
+            return sentimentResponses.SelectMany(response =>
+            {
+                var result = response.Value;
+                return result.Select(documentResult =>
+                {
+                    (int speakerNumber, double offsetInTicks) = phraseData[Int32.Parse(documentResult.Id)];
+                    return new SentimentAnalysisResult(speakerNumber, offsetInTicks, documentResult);
+                });
+            }
+            ).ToArray();
+        }
+        public SentimentConfidenceScores[] GetSentimentScores(SentimentAnalysisResult[] sentimentResults)
+        {
+            return sentimentResults.OrderBy(x => x.offsetInTicks)
+            .Select(result => result.sentimentResult.DocumentSentiment.ConfidenceScores).ToArray();
         }
     }
 }

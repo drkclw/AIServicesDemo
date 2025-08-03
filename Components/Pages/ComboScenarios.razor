@@ -1,7 +1,11 @@
 ﻿@using BlazorBootstrap;
 @using AzureAIServicesDemo.Services;
+@using Models.Language;
+@using Models.Speech;
+@using System.Text.Json
 @inject SpeechService speechService;
 @inject TranslatorService translatorService;
+@inject LanguageService languageService;
 
 @page "/combo"
 
@@ -20,12 +24,32 @@
             <textarea id="translatedText" @bind="translatedText" class="form-control"></textarea>
         </Content>
     </AccordionItem>
+    <AccordionItem Title="Call transcription">
+        <Content>
+            <button class="btn btn-primary" @onclick="transcribeCall">Transcribe call</button>
+
+            @if(transcriptionResults != null)
+            {
+                @foreach (var transcriptionResult in transcriptionResults)
+                {
+                    <div style="display: flex;">
+                        <div style="margin: 10px;">@transcriptionResult.SentimentAnalysis.sentimentResult.DocumentSentiment.Sentiment.ToString()</div>
+                        <div style="margin: 10px; display:flex; flex-direction: column;">
+                            <div><span>Speaker @transcriptionResult.Phrase.speakerNumber  @TimeSpan.FromTicks((long)transcriptionResult.Phrase.offsetInTicks).ToString("g")</span></div>
+                            <div>@transcriptionResult.Phrase.text</div>
+                        </div>
+                    </div>
+                }
+            }            
+        </Content>
+    </AccordionItem>
 </Accordion>
 
 @code {
     private string? translatedText;
     private string? capturedText;
     private string? language;
+    private IEnumerable<TranscriptionResult>? transcriptionResults;
 
     private async Task translateVoice()
     {
@@ -33,4 +57,22 @@
         var result = await translatorService.Translate(capturedText, language ?? "en-US");
         translatedText = string.Join("\n", result?.Translations?.SelectMany(t => t));
     }
+
+    private async Task transcribeCall()
+    {
+        var transcriptionId = await speechService.CreateTranscription("https://azureaidemostorage.blob.core.windows.net/speech/transcription/call_9.mp3", false);
+        await speechService.WaitForTranscription(transcriptionId);
+        JsonElement transcriptionFiles = await speechService.GetTranscriptionFiles(transcriptionId);
+        var transcriptionUri = speechService.GetTranscriptionUri(transcriptionFiles);
+        var transcriptionPhrases = await speechService.GetTranscription(transcriptionUri);
+        var sentimentResults = await languageService.AnalyzeSentiment(transcriptionPhrases);
+        var sentimentScores = languageService.GetSentimentScores(sentimentResults);
+
+        transcriptionResults = transcriptionPhrases.Join(sentimentResults, phrase => phrase.offsetInTicks,
+            sentiment => sentiment.offsetInTicks, (phrase, sentiment) => new TranscriptionResult
+            {
+                Phrase = phrase,
+                SentimentAnalysis = sentiment
+            });
+    }    
 }
