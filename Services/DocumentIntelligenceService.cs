@@ -18,9 +18,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("patient-form", documentData);
+                AnalyzeDocumentOptions options = new AnalyzeDocumentOptions("patient-form", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, options);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
@@ -42,9 +42,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("prebuilt-receipt", documentData);
+                AnalyzeDocumentOptions options = new AnalyzeDocumentOptions("prebuilt-receipt", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, options);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
@@ -68,9 +68,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("hd-supply-invoice-items", documentData);
+                AnalyzeDocumentOptions options = new AnalyzeDocumentOptions("hd-supply-invoice-items", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, options);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
