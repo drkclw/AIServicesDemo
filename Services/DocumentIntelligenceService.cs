@@ -18,12 +18,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentContent content = new AnalyzeDocumentContent
-                {
-                    Base64Source = documentData
-                };
+                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("patient-form", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, "patient-form", content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
@@ -45,12 +42,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentContent content = new AnalyzeDocumentContent
-                {
-                    Base64Source = documentData
-                };
+                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("prebuilt-receipt", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, "prebuilt-receipt", content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
@@ -74,12 +68,9 @@ namespace AzureAIServicesDemo.Services
             try
             {
                 BinaryData documentData = await BinaryData.FromStreamAsync(documentStream);
-                AnalyzeDocumentContent content = new AnalyzeDocumentContent
-                {
-                    Base64Source = documentData
-                };
+                AnalyzeDocumentOptions content = new AnalyzeDocumentOptions("hd-supply-invoice-items", documentData);
 
-                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, "hd-supply-invoice-items", content);
+                var result = await _client.AnalyzeDocumentAsync(Azure.WaitUntil.Completed, content);
 
                 foreach (AnalyzedDocument document in result.Value.Documents)
                 {
